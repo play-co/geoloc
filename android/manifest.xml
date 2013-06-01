@@ -1,0 +1,5 @@
+<!--START_PLUGINS_MANIFEST-->
+	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<!--END_PLUGINS_MANIFEST-->
+<!--START_PLUGINS_APPLICATION-->
+<!--END_PLUGINS_APPLICATION-->

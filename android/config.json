@@ -1,0 +1,12 @@
+{
+		"copyFiles": [
+			"GeolocPlugin.java"
+		],
+		"libraries": [
+		],
+		"jars": [
+		],
+		"injectionXML": "manifest.xml",
+		"injectionXSL": "manifest.xsl"
+}
+
