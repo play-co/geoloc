@@ -2,23 +2,25 @@ var path = require("path");
 var fs = require("fs");
 var ff = require("ff");
 var clc = require("cli-color");
-var common = require("../../src/common");
-var root = common.paths.root; //save the root path function
-
-var logger = new common.Formatter('addon-geoloc');
 
 //called when addon is activated
-exports.init = function () {
+exports.init = function (common) {
+	var logger = new common.Formatter('geoloc');
+
 	logger.log("Initializing");
 
 	exports.load();
 };
 
-exports.load = function () {
+exports.load = function (common) {
+	var logger = new common.Formatter('geoloc');
+
 	logger.log("Loading");
 }
 
-exports.testapp = function (opts, next) {
+exports.testapp = function (common, opts, next) {
+	var logger = new common.Formatter('geoloc');
+
 	logger.log("TestApp Initializing");
 }
 
