@@ -73,27 +73,29 @@
 
 - (void) sendEvent:(NSString *)eventName jsonObject:(NSDictionary *)jsonObject {
 	@try {
-		NSString *method = [jsonObject valueForKey:@"method"];
-		
-		if ([method isEqualToString:@"getPosition"]) {
-			NSLOG(@"{geoloc} Got request");
+		if ([eventName isEqualToString:@"onRequest"]) {
+			NSString *method = [jsonObject valueForKey:@"method"];
 
-			CLAuthorizationStatus authStatus = [CLLocationManager authorizationStatus];
+			if ([method isEqualToString:@"getPosition"]) {
+				NSLOG(@"{geoloc} Got request");
 
-			// If user has or may authorize use of GPS,
-			if (authStatus == kCLAuthorizationStatusNotDetermined ||
-				authStatus == kCLAuthorizationStatusAuthorized) {
-				[self getNewLocation];
+				CLAuthorizationStatus authStatus = [CLLocationManager authorizationStatus];
 
-				// Additionally if the user is getting a prompt for this,
-				if (authStatus == kCLAuthorizationStatusNotDetermined) {
-					NSLOG(@"{geoloc} WARNING: User being prompted to request access. This geolocation request will be ignored if user denies access to GPS");
+				// If user has or may authorize use of GPS,
+				if (authStatus == kCLAuthorizationStatusNotDetermined ||
+						authStatus == kCLAuthorizationStatusAuthorized) {
+					[self getNewLocation];
+
+					// Additionally if the user is getting a prompt for this,
+					if (authStatus == kCLAuthorizationStatusNotDetermined) {
+						NSLOG(@"{geoloc} WARNING: User being prompted to request access. This geolocation request will be ignored if user denies access to GPS");
+					}
+				} else {
+					[[PluginManager get] dispatchJSEvent:[NSDictionary dictionaryWithObjectsAndKeys:
+						@"geoloc",@"name",
+						kCFBooleanTrue, @"failed",
+						nil]];
 				}
-			} else {
-				[[PluginManager get] dispatchJSEvent:[NSDictionary dictionaryWithObjectsAndKeys:
-													  @"geoloc",@"name",
-													  kCFBooleanTrue, @"failed",
-													  nil]];
 			}
 		}
 	}
