@@ -1,8 +1,10 @@
 {
-	"header": "GeoLoc.h",
-	"source": "GeoLoc.mm",
+	"code": [
+		"GeoLoc.h",
+		"GeoLoc.mm"
+	],
 	"frameworks": [
-		"System/Library/Frameworks/CoreLocation.framework"
+		"CoreLocation"
 	]
 }
 

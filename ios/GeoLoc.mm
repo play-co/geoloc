@@ -1,3 +1,5 @@
+#import "GeoLoc.h"
+
 @implementation GeoLocPlugin
 
 // The plugin must call super dealloc.
@@ -38,12 +40,12 @@
 
 		// If request is active,
 		if (self.requested) {
-			[m_pluginManager dispatchJSEvent:[NSDictionary dictionaryWithObjectsAndKeys:
-											  @"geoloc",@"name",
-											  [NSNumber numberWithDouble:newLocation.coordinate.latitude],@"latitude",
-											  [NSNumber numberWithDouble:newLocation.coordinate.longitude],@"longitude",
-											  kCFBooleanFalse, @"failed",
-											  nil]];
+			[[PluginManager get] dispatchJSEvent:[NSDictionary dictionaryWithObjectsAndKeys:
+												  @"geoloc",@"name",
+												  [NSNumber numberWithDouble:newLocation.coordinate.latitude],@"latitude",
+												  [NSNumber numberWithDouble:newLocation.coordinate.longitude],@"longitude",
+												  kCFBooleanFalse, @"failed",
+												  nil]];
 			self.lastRequestTimestamp = newLocation.timestamp;
 			self.requested = false;
 		} else {
@@ -88,10 +90,10 @@
 					NSLOG(@"{geoloc} WARNING: User being prompted to request access. This geolocation request will be ignored if user denies access to GPS");
 				}
 			} else {
-				[m_pluginManager dispatchJSEvent:[NSDictionary dictionaryWithObjectsAndKeys:
-												  @"geoloc",@"name",
-												  kCFBooleanTrue, @"failed",
-												  nil]];
+				[[PluginManager get] dispatchJSEvent:[NSDictionary dictionaryWithObjectsAndKeys:
+													  @"geoloc",@"name",
+													  kCFBooleanTrue, @"failed",
+													  nil]];
 			}
 		}
 	}

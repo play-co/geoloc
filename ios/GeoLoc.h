@@ -1,3 +1,4 @@
+#import "PluginManager.h"
 #import <CoreLocation/CoreLocation.h>
 
 @interface GeoLocPlugin : GCPlugin<CLLocationManagerDelegate>
