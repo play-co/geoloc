@@ -9,7 +9,7 @@ exports.init = function (common) {
 
 	logger.log("Initializing");
 
-	exports.load();
+	exports.load(common);
 };
 
 exports.load = function (common) {
