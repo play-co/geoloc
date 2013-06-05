@@ -1,6 +1,6 @@
 #import "GeoLoc.h"
 
-@implementation GeoLocPlugin
+@implementation GeolocPlugin
 
 // The plugin must call super dealloc.
 - (void) dealloc {
