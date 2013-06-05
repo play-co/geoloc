@@ -30,58 +30,52 @@ import com.tealeaf.event.*;
 
 public class GeolocPlugin implements IPlugin {
 	public class GeolocEvent extends com.tealeaf.event.Event {
-		int id;
 		boolean failed;
 		double longitude, latitude;
-		public GeolocEvent(int callback) {
+
+		public GeolocEvent() {
 			super("geoloc");
-			this.id = callback;
 			this.failed = true;
 		}
-		public GeolocEvent(int callback, double longitude, double latitude) {
+
+		public GeolocEvent(double longitude, double latitude) {
 			super("geoloc");
-			this.id = callback;
 			this.failed = false;
 			this.longitude = longitude;
 			this.latitude = latitude;
 		}
 	}
 
-	public class MyLocationListener implements LocationListener
-	{
+	public class MyLocationListener implements LocationListener {
 		public boolean enabled;
 		public int callback;
 
 		@Override
-			public void onLocationChanged(Location loc)
-			{
-				logger.debug("{geoloc} Received location changed event");
+			public void onLocationChanged(Location loc) {
+				logger.log("{geoloc} Received location changed event");
 
 				// If position is enabled,
 				if (enabled) {
-					EventQueue.pushEvent(new GeolocEvent(callback, loc.getLongitude(), loc.getLatitude()));
+					EventQueue.pushEvent(new GeolocEvent(loc.getLongitude(), loc.getLatitude()));
 				} else {
-					EventQueue.pushEvent(new GeolocEvent(callback));
+					EventQueue.pushEvent(new GeolocEvent());
 				}
 			}
 
 		@Override
-			public void onProviderDisabled(String provider)
-			{
+			public void onProviderDisabled(String provider) {
 				enabled = false;
-				logger.debug("{geoloc} Location provider disabled: ", provider);
+				logger.log("{geoloc} Location provider disabled: ", provider);
 			}
 
 		@Override
-			public void onProviderEnabled(String provider)
-			{
+			public void onProviderEnabled(String provider) {
 				enabled = true;
-				logger.debug("{geoloc} Location provider enabled: ", provider);
+				logger.log("{geoloc} Location provider enabled: ", provider);
 			}
 
 		@Override
-			public void onStatusChanged(String provider, int status, Bundle extras)
-			{
+			public void onStatusChanged(String provider, int status, Bundle extras) {
 			}
 	}
 
@@ -102,9 +96,9 @@ public class GeolocPlugin implements IPlugin {
 		_listener.enabled = _mgr.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
 		if (_listener.enabled) {
-			logger.debug("{geoloc} GPS provider is initially enabled.");
+			logger.log("{geoloc} GPS provider is initially enabled.");
 		} else {
-			logger.debug("{geoloc} GPS provider is initially DISABLED.");
+			logger.log("{geoloc} GPS provider is initially DISABLED.");
 		}
 	}
 
@@ -133,20 +127,14 @@ public class GeolocPlugin implements IPlugin {
 	}
 
 	public void onRequest(String jsonData) {
+		logger.log("{geoloc} Got position request");
+
 		try {
-			JSONObject data = new JSONObject(jsonData);
-
-			int id = data.optInt("id", 1);
-			String method = data.optString("method", "getPosition");
-
-			// Handle getPosition()
-			if (method.equals("getPosition")) {
-				_listener.callback = id;
-
+			if (_listener.enabled) {
 				// Start async request for GPS position update
 				_mgr.requestSingleUpdate(LocationManager.GPS_PROVIDER, _listener, null);
-
-				logger.debug("{geoloc} Got position request");
+			} else {
+				EventQueue.pushEvent(new GeolocEvent());
 			}
 		} catch (Exception e) {
 			logger.log(e);
