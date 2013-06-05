@@ -1,5 +1,5 @@
 {
-  "name": "addon-geoloc",
+  "name": "geoloc",
   "directories": {
   },
   "dependencies": {
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gameclosure/addon-geoloc.git"
+    "url": "https://github.com/gameclosure/geoloc.git"
   },
   "author": "",
   "version": "1.0.0"
