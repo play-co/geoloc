@@ -7,6 +7,5 @@
 @property (nonatomic, assign) bool requested;
 @property (nonatomic, retain) NSDate *lastRequestTimestamp;
 
-- (void)getNewLocation;
+- (void) getNewLocation;
 @end
-
