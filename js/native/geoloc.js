@@ -43,7 +43,7 @@ NATIVE.events.registerHandler('geoloc', function(evt) {
 GLOBAL.navigator.geolocation = {
 	getCurrentPosition: function(cbSuccess, cbFail) {
 		// Post a new request
-		NATIVE.plugins.sendEvent("GeolocPlugin", "onRequest", "");
+		NATIVE.plugins.sendEvent("GeolocPlugin", "onRequest", "{}");
 
 		// Insert callbacks into waiting lists
 		if (typeof(cbSuccess) == "function") {
