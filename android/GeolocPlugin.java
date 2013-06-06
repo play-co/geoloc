@@ -21,8 +21,11 @@ import android.location.LocationManager;
 
 import com.tealeaf.plugin.IPlugin;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.content.Intent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.util.Log;
 
 import com.tealeaf.EventQueue;
@@ -79,6 +82,7 @@ public class GeolocPlugin implements IPlugin {
 			}
 	}
 
+	boolean _gps_ask;
 	MyLocationListener _listener;
 	Context _ctx;
 	LocationManager _mgr;
@@ -100,6 +104,8 @@ public class GeolocPlugin implements IPlugin {
 		} else {
 			logger.log("{geoloc} GPS provider is initially DISABLED.");
 		}
+
+		_gps_ask = false;
 	}
 
 	public void onResume() {
@@ -126,15 +132,61 @@ public class GeolocPlugin implements IPlugin {
 	public void onActivityResult(Integer request, Integer result, Intent data) {
 	}
 
-	public void onRequest(String jsonData) {
-		logger.log("{geoloc} Got position request");
+	private void showGPSDisabledAlertToUser() {
+		logger.log("{geoloc} aGPSASK:", _gps_ask);
+		TeaLeaf.get().runOnUiThread(new Runnable() {
+			public void run() {
+				logger.log("{geoloc} Running");
+				AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(TeaLeaf.get());
+				alertDialogBuilder.setMessage("GPS is disabled in your device. Would you like to enable it?")
+								  .setCancelable(false)
+								  .setPositiveButton("Goto Settings Page To Enable GPS",
+									new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id){
+						Intent callGPSSettingIntent = new Intent(
+							android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+						TeaLeaf.get().startActivity(callGPSSettingIntent);
+					}
+				});
 
+				alertDialogBuilder.setNegativeButton("Cancel",
+									new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+						dialog.cancel();
+					}
+				});
+
+				AlertDialog alert = alertDialogBuilder.create();
+				logger.log("{geoloc} Showing");
+				alert.show();
+				logger.log("{geoloc} Showed");
+			}
+		});
+		logger.log("{geoloc} aGPSASK:", _gps_ask);
+	}
+
+	public void onRequest(String jsonData) {
 		try {
 			if (_listener.enabled) {
+				logger.log("{geoloc} Requesting single GPS update");
+
 				// Start async request for GPS position update
 				_mgr.requestSingleUpdate(LocationManager.GPS_PROVIDER, _listener, null);
 			} else {
-				EventQueue.pushEvent(new GeolocEvent());
+				logger.log("{geoloc} GPSASK:", _gps_ask);
+				if (_gps_ask) {
+					logger.log("{geoloc} Failing to return position as GPS is disabled");
+
+					EventQueue.pushEvent(new GeolocEvent());
+				} else {
+					logger.log("{geoloc} Presenting GPS disabled alert to user");
+
+					showGPSDisabledAlertToUser();
+
+					logger.log("{geoloc} aGPSASK:", _gps_ask);
+					_gps_ask = true;
+					logger.log("{geoloc} bGPSASK:", _gps_ask);
+				}
 			}
 		} catch (Exception e) {
 			logger.log(e);
