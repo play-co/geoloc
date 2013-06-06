@@ -69,6 +69,8 @@ public class GeolocPlugin implements IPlugin {
 			public void onProviderDisabled(String provider) {
 				enabled = false;
 				logger.log("{geoloc} Location provider disabled: ", provider);
+
+				EventQueue.pushEvent(new GeolocEvent());
 			}
 
 		@Override
@@ -133,10 +135,8 @@ public class GeolocPlugin implements IPlugin {
 	}
 
 	private void showGPSDisabledAlertToUser() {
-		logger.log("{geoloc} aGPSASK:", _gps_ask);
 		TeaLeaf.get().runOnUiThread(new Runnable() {
 			public void run() {
-				logger.log("{geoloc} Running");
 				AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(TeaLeaf.get());
 				alertDialogBuilder.setMessage("GPS is disabled in your device. Would you like to enable it?")
 								  .setCancelable(false)
@@ -157,37 +157,29 @@ public class GeolocPlugin implements IPlugin {
 				});
 
 				AlertDialog alert = alertDialogBuilder.create();
-				logger.log("{geoloc} Showing");
 				alert.show();
-				logger.log("{geoloc} Showed");
 			}
 		});
-		logger.log("{geoloc} aGPSASK:", _gps_ask);
 	}
 
 	public void onRequest(String jsonData) {
 		try {
 			if (_listener.enabled) {
 				logger.log("{geoloc} Requesting single GPS update");
-
-				// Start async request for GPS position update
-				_mgr.requestSingleUpdate(LocationManager.GPS_PROVIDER, _listener, null);
 			} else {
-				logger.log("{geoloc} GPSASK:", _gps_ask);
 				if (_gps_ask) {
-					logger.log("{geoloc} Failing to return position as GPS is disabled");
-
-					EventQueue.pushEvent(new GeolocEvent());
+					logger.log("{geoloc} GPS is disabled but requesting anyway in case it changed");
 				} else {
 					logger.log("{geoloc} Presenting GPS disabled alert to user");
 
 					showGPSDisabledAlertToUser();
 
-					logger.log("{geoloc} aGPSASK:", _gps_ask);
 					_gps_ask = true;
-					logger.log("{geoloc} bGPSASK:", _gps_ask);
 				}
 			}
+
+			// Start async request for GPS position update
+			_mgr.requestSingleUpdate(LocationManager.GPS_PROVIDER, _listener, null);
 		} catch (Exception e) {
 			logger.log(e);
 		}
