@@ -1,7 +1,5 @@
-import device;
-
 // If on true native mobile platform,
-if (GLOBAL.NATIVE && !device.simulatingMobileNative) {
+if (!navigator.geolocation || !navigator.geolocation.getCurrentPosition) {
 	logger.log("{geoloc} Installing JS component for native");
 
 	var onSuccess = [];
