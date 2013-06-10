@@ -1,6 +1,7 @@
 import device;
 
-if (device.isNative) {
+// If on true native mobile platform,
+if (GLOBAL.NATIVE && !device.simulatingMobileNative) {
 	logger.log("{geoloc} Installing JS component for native");
 
 	var onSuccess = [];
