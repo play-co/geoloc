@@ -1,6 +1,8 @@
 import device;
 
 if (device.isNative) {
+	logger.log("{geoloc} Installing JS component for native");
+
 	var onSuccess = [];
 	var onFail = [];
 
@@ -57,5 +59,7 @@ if (device.isNative) {
 			}
 		}
 	}
+} else {
+	logger.log("{geoloc} Skipping installing JS wrapper on non-native target");
 }
 
