@@ -7,7 +7,7 @@ var clc = require("cli-color");
 exports.init = function (common) {
 	var logger = new common.Formatter('geoloc');
 
-	logger.log("Initializing");
+	//logger.log("Initializing");
 
 	exports.load(common);
 };
@@ -15,12 +15,12 @@ exports.init = function (common) {
 exports.load = function (common) {
 	var logger = new common.Formatter('geoloc');
 
-	logger.log("Loading");
+	//logger.log("Loading");
 }
 
 exports.testapp = function (common, opts, next) {
 	var logger = new common.Formatter('geoloc');
 
-	logger.log("TestApp Initializing");
+	//logger.log("TestApp Initializing");
 }
 
