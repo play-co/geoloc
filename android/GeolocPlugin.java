@@ -52,6 +52,7 @@ public class GeolocPlugin implements IPlugin {
 	public class MyLocationListener implements LocationListener {
 		public boolean enabled;
 		public int callback;
+		LocationManager mgr;
 
 		@Override
 			public void onLocationChanged(Location loc) {
@@ -60,6 +61,7 @@ public class GeolocPlugin implements IPlugin {
 				// If position is enabled,
 				if (enabled) {
 					EventQueue.pushEvent(new GeolocEvent(loc.getLongitude(), loc.getLatitude()));
+					mgr.removeUpdates(this);
 				} else {
 					EventQueue.pushEvent(new GeolocEvent());
 				}
@@ -101,6 +103,7 @@ public class GeolocPlugin implements IPlugin {
 	public void onCreate(Activity activity, Bundle savedInstanceState) {
 		_mgr = (LocationManager)_ctx.getSystemService(Context.LOCATION_SERVICE);
 		_listener.enabled = _mgr.isProviderEnabled(LocationManager.GPS_PROVIDER);
+		_listener.mgr = _mgr;
 
 		if (_listener.enabled) {
 			logger.log("{geoloc} GPS provider is initially enabled.");
@@ -179,11 +182,23 @@ public class GeolocPlugin implements IPlugin {
 				}
 			}
 
-			// Start async request for GPS position update
-			_mgr.requestSingleUpdate(LocationManager.GPS_PROVIDER, _listener, null);
+			String provider = null;
+
+			if (_mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+				provider = LocationManager.GPS_PROVIDER;
+			} else if (_mgr.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+				provider = LocationManager.NETWORK_PROVIDER;
+			}
+
+			if (provider != null) {
+				_mgr.requestLocationUpdates(provider, 0, 0, _listener);
+			} else {
+				EventQueue.pushEvent(new GeolocEvent());
+			}
 		} catch (Exception e) {
 			logger.log(e);
 			e.printStackTrace();
+			EventQueue.pushEvent(new GeolocEvent());
 		}
 	}
 
