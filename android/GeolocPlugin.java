@@ -81,6 +81,7 @@ public class GeolocPlugin implements IPlugin {
 
 		@Override
 			public void onStatusChanged(String provider, int status, Bundle extras) {
+				logger.log("{geoloc} Location provider status changed: ", provider, status);
 			}
 	}
 
@@ -182,6 +183,7 @@ public class GeolocPlugin implements IPlugin {
 			_mgr.requestSingleUpdate(LocationManager.GPS_PROVIDER, _listener, null);
 		} catch (Exception e) {
 			logger.log(e);
+			e.printStackTrace();
 		}
 	}
 
