@@ -19,16 +19,23 @@
 	
 	self.locationMgr = [[[CLLocationManager alloc] init] autorelease];
 	self.locationMgr.desiredAccuracy = kCLLocationAccuracyBest;
+	self.locationMgr.distanceFilter = kCLDistanceFilterNone;
 	self.locationMgr.delegate = self;
 	self.lastLocation = nil;
+	self.started = false;
 	
 	return self;
+}
+
+- (void)locationManager:(CLLocationManager *)manager
+	   didFailWithError:(NSError *)error {
+	NSLOG(@"{geoloc} Error:", error);
 }
 
 - (void) locationManager:(CLLocationManager *)manager
      didUpdateToLocation:(CLLocation *)newLocation
             fromLocation:(CLLocation *)oldLocation {
-	
+
 	// If last location is not initialized,
     if (!self.lastLocation) {
 		// Eat this update and wait for the next one
@@ -48,11 +55,21 @@
 												  nil]];
 			self.lastRequestTimestamp = newLocation.timestamp;
 			self.requested = false;
+
+			// TODO: There seems to be a bug in the iOS location manager that requires us
+			// to restart the location updates to do one-shots. -cat
+			if (self.started) {
+				[manager stopUpdatingLocation];
+				self.started = false;
+			}
 		} else {
 			// If position updates continue 43 seconds past the last request, then just stop updating
 			if (!self.lastRequestTimestamp ||
 				[newLocation.timestamp timeIntervalSinceDate:self.lastRequestTimestamp] >= 43) {
-				[manager stopUpdatingLocation];
+				if (self.started) {
+					[manager stopUpdatingLocation];
+					self.started = false;
+				}
 				NSLOG(@"{geoloc} Disabled position updates since requests have not been received for a while");
 			}
 		}
@@ -64,7 +81,10 @@
 - (void) getNewLocation {
 	self.requested = true;
 
-    [self.locationMgr startUpdatingLocation];
+	if (!self.started) {
+    	[self.locationMgr startUpdatingLocation];
+		self.started = true;
+	}
 }
 
 - (void) initializeWithManifest:(NSDictionary *)manifest appDelegate:(TeaLeafAppDelegate *)appDelegate {

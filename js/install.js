@@ -6,6 +6,7 @@ if (!navigator.geolocation || !navigator.geolocation.getCurrentPosition) {
 	var onFail = [];
 
 	NATIVE.events.registerHandler('geoloc', function(evt) {
+		logger.log("Got GEOLOC event -cat");
 		if (evt.failed) {
 			// Create HTML5-like error object
 			var err = {
