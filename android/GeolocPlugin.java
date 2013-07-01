@@ -206,7 +206,7 @@ public class GeolocPlugin implements IPlugin {
 	}
 
 	public boolean consumeOnBackPressed() {
-		return false;
+		return true;
 	}
 
 	public void onBackPressed() {
