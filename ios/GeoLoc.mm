@@ -51,6 +51,7 @@
 												  @"geoloc",@"name",
 												  [NSNumber numberWithDouble:newLocation.coordinate.latitude],@"latitude",
 												  [NSNumber numberWithDouble:newLocation.coordinate.longitude],@"longitude",
+												  [NSNumber numberWithDouble:newLocation.horizontalAccuracy],@"accuracy",
 												  kCFBooleanFalse, @"failed",
 												  nil]];
 			self.lastRequestTimestamp = newLocation.timestamp;

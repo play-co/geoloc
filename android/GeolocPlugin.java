@@ -34,18 +34,19 @@ import com.tealeaf.event.*;
 public class GeolocPlugin implements IPlugin {
 	public class GeolocEvent extends com.tealeaf.event.Event {
 		boolean failed;
-		double longitude, latitude;
+		double longitude, latitude, accuracy;
 
 		public GeolocEvent() {
 			super("geoloc");
 			this.failed = true;
 		}
 
-		public GeolocEvent(double longitude, double latitude) {
+		public GeolocEvent(double longitude, double latitude, double accuracy) {
 			super("geoloc");
 			this.failed = false;
 			this.longitude = longitude;
 			this.latitude = latitude;
+			this.accuracy = accuracy;
 		}
 	}
 
@@ -60,7 +61,7 @@ public class GeolocPlugin implements IPlugin {
 
 				// If position is enabled,
 				if (enabled) {
-					EventQueue.pushEvent(new GeolocEvent(loc.getLongitude(), loc.getLatitude()));
+					EventQueue.pushEvent(new GeolocEvent(loc.getLongitude(), loc.getLatitude(), loc.getAccuracy()));
 					mgr.removeUpdates(this);
 				} else {
 					EventQueue.pushEvent(new GeolocEvent());

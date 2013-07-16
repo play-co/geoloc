@@ -27,7 +27,8 @@ if (!navigator.geolocation || !navigator.geolocation.getCurrentPosition) {
 			var pos = {
 				coords: {
 					latitude: evt.latitude,
-					longitude: evt.longitude
+					longitude: evt.longitude,
+					accuracy: evt.accuracy
 				}
 			};
 
