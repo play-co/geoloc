@@ -22,10 +22,14 @@ Now you can use the normal HTML5 `navigator.geolocation.getCurrentPosition` API:
 navigator.geolocation.getCurrentPosition(bind(this, function(pos) {
 	var lat = pos.coords.latitude;
 	var lng = pos.coords.longitude;
+	var acc = pos.coords.accuracy;
 }), bind(this, function(err) {
 	logger.log("FAIL:", err.code);
 }));
 ~~~
+
+This gives you lat, long and accuracy.  Accuracy is in meters.
+
 
 ## Platform-specific notes
 
@@ -47,8 +51,6 @@ Requests until they accept the popup will fail.
 
 The GPS subsystem is often manually turned off to save battery, so the user will be prompted to switch to the Settings app to enable GPS for use in your app.  If they tap the OK button it will take them right to that settings pane.  Pressing the back button will take them directly back to your game.
 
-Requests until they enable GPS will fail.
+Until the network/GPS location provider warms up you will receive the last known position of the device.  Requesting the position repeatedly over time will improve accuracy.
 
-After the first GPS request it takes roughly 30 seconds for the GPS to warm up.  You will start getting GPS callbacks after the GPS warmup completes on this platform, so it may be a good idea to display a warning.
-
-When testing your app, be sure to try disabling GPS, cancelling the dialog, and other usage patterns to make sure that the user has a seamless experience in all cases.
+The location requests are canceled when the user places your app in the background, to conserve battery.
