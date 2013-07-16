@@ -14,10 +14,14 @@ import android.content.pm.PackageManager;
 import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import java.util.HashMap;
+import java.util.List;
 
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.location.LocationProvider;
+import android.location.GpsStatus;
+import android.location.Criteria;
 
 import com.tealeaf.plugin.IPlugin;
 import android.app.Activity;
@@ -31,7 +35,7 @@ import android.util.Log;
 import com.tealeaf.EventQueue;
 import com.tealeaf.event.*;
 
-public class GeolocPlugin implements IPlugin {
+public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listener {
 	public class GeolocEvent extends com.tealeaf.event.Event {
 		boolean failed;
 		double longitude, latitude, accuracy;
@@ -50,51 +54,67 @@ public class GeolocPlugin implements IPlugin {
 		}
 	}
 
-	public class MyLocationListener implements LocationListener {
-		public boolean enabled;
-		public int callback;
-		LocationManager mgr;
+	private Context _ctx;			// App context
+	private LocationManager _mgr;	// Location manager instance
+	private boolean _gps_ask;		// Has asked user to enable GPS in settings?
+	private Location _location;		// Last location
+	private boolean _gps_requested;	// Waiting for location updates from GPS?
+	private boolean _net_requested;	// Waiting for location updates from network?
 
-		@Override
-			public void onLocationChanged(Location loc) {
-				logger.log("{geoloc} Received location changed event");
+	@Override
+		public void onLocationChanged(Location loc) {
+			logger.log("{geoloc} Received location changed event:", loc != null ? loc.toString() : "(null)");
 
-				// If position is enabled,
-				if (enabled) {
-					EventQueue.pushEvent(new GeolocEvent(loc.getLongitude(), loc.getLatitude(), loc.getAccuracy()));
-					mgr.removeUpdates(this);
-				} else {
-					EventQueue.pushEvent(new GeolocEvent());
-				}
-			}
+			// Update last location
+			_location = loc;
 
-		@Override
-			public void onProviderDisabled(String provider) {
-				enabled = false;
-				logger.log("{geoloc} Location provider disabled: ", provider);
-
+			if (loc != null) {
+				EventQueue.pushEvent(new GeolocEvent(loc.getLongitude(), loc.getLatitude(), loc.getAccuracy()));
+			} else {
 				EventQueue.pushEvent(new GeolocEvent());
 			}
+		}
 
-		@Override
-			public void onProviderEnabled(String provider) {
-				enabled = true;
-				logger.log("{geoloc} Location provider enabled: ", provider);
+	@Override
+		public void onProviderDisabled(String provider) {
+			logger.log("{geoloc} Location provider disabled: ", provider);
+			// TODO: How should we react?
+		}
+
+	@Override
+		public void onProviderEnabled(String provider) {
+			logger.log("{geoloc} Location provider enabled: ", provider);
+			// TODO: How should we react?
+		}
+
+	@Override
+		public void onStatusChanged(String provider, int status, Bundle extras) {
+			logger.log("{geoloc} Location provider status changed: ", provider, status);
+			// TODO: How should we react?
+		}
+
+	@Override
+		public void onGpsStatusChanged(int event) {
+			switch (event) {
+				case GpsStatus.GPS_EVENT_STARTED:
+					logger.log("{geoloc} GPS status: Started");
+					break;
+				case GpsStatus.GPS_EVENT_STOPPED:
+					logger.log("{geoloc} GPS status: Stopped");
+					break;
+				case GpsStatus.GPS_EVENT_FIRST_FIX:
+					logger.log("{geoloc} GPS status: First fix");
+					break;
+				case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
+					logger.log("{geoloc} GPS status: Satellite update");
+					break;
+				default:
+					logger.log("{geoloc} GPS status:", event);
 			}
-
-		@Override
-			public void onStatusChanged(String provider, int status, Bundle extras) {
-				logger.log("{geoloc} Location provider status changed: ", provider, status);
-			}
-	}
-
-	boolean _gps_ask;
-	MyLocationListener _listener;
-	Context _ctx;
-	LocationManager _mgr;
+			// TODO: How should we react?
+		}
 
 	public GeolocPlugin() {
-		_listener = new MyLocationListener();
 	}
 
 	public void onCreateApplication(Context applicationContext) {
@@ -103,31 +123,96 @@ public class GeolocPlugin implements IPlugin {
 
 	public void onCreate(Activity activity, Bundle savedInstanceState) {
 		_mgr = (LocationManager)_ctx.getSystemService(Context.LOCATION_SERVICE);
-		_listener.enabled = _mgr.isProviderEnabled(LocationManager.GPS_PROVIDER);
-		_listener.mgr = _mgr;
 
-		if (_listener.enabled) {
+		// Listen for GPS events
+		_mgr.addGpsStatusListener(this);
+
+		// Report whether or not our favorite providers are enabled
+		if (_mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 			logger.log("{geoloc} GPS provider is initially enabled.");
 		} else {
 			logger.log("{geoloc} GPS provider is initially DISABLED.");
 		}
+		if (_mgr.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+			logger.log("{geoloc} Network provider is initially enabled.");
+		} else {
+			logger.log("{geoloc} Network provider is initially DISABLED.");
+		}
 
-		_gps_ask = false;
+		// Print out provider list
+		List<String> providers = _mgr.getAllProviders();
+		for (String provider : providers) {
+			LocationProvider info = _mgr.getProvider(provider);
+			logger.log("{geoloc} Location provider", provider, ":", info.toString());
+		}
+
+		// Get last locations
+		Location gps_last = _mgr.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+		Location net_last = _mgr.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+
+		// Take the best of the two options
+		if (gps_last != null) {
+			_location = gps_last;
+		} else {
+			_location = net_last;
+		}
+
+		// Report intiial position
+		if (_location == null) {
+			logger.log("{geoloc} Initial position not found");
+		} else {
+			logger.log("{geoloc} Initial position found:", _location.toString());
+		}
+
+		// Start requests immediately so that the location subsystem will warm up faster
+		startRequests();
+	}
+
+	// Returns true if requests are started
+	public boolean startRequests() {
+		// If GPS provider is enabled,
+		if (!_gps_requested && _mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+			logger.log("{geoloc} Requesting location from GPS provider");
+			_mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+			_gps_requested = true;
+		}
+
+		if (!_net_requested && _mgr.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+			logger.log("{geoloc} Requesting location from network provider");
+			_mgr.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+			_net_requested = true;
+		}
+
+		return _gps_requested || _net_requested;
+	}
+
+	public void stopRequests() {
+		if (_gps_requested || _net_requested) {
+			logger.log("{geoloc} Removing location requests on pause");
+			_mgr.removeUpdates(this);
+			_gps_requested = false;
+			_net_requested = false;
+		}
 	}
 
 	public void onResume() {
+		startRequests();
 	}
 
 	public void onStart() {
+		startRequests();
 	}
 
 	public void onPause() {
+		stopRequests();
 	}
 
 	public void onStop() {
+		stopRequests();
 	}
 
 	public void onDestroy() {
+		stopRequests();
 	}
 
 	public void onNewIntent(Intent intent) {
@@ -169,12 +254,9 @@ public class GeolocPlugin implements IPlugin {
 
 	public void onRequest(String jsonData) {
 		try {
-			if (_listener.enabled) {
-				logger.log("{geoloc} Requesting single GPS update");
-			} else {
-				if (_gps_ask) {
-					logger.log("{geoloc} GPS is disabled but requesting anyway in case it changed");
-				} else {
+			// If GPS is disabled, then bug the user once with a modal
+			if (!_mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+				if (!_gps_ask) {
 					logger.log("{geoloc} Presenting GPS disabled alert to user");
 
 					showGPSDisabledAlertToUser();
@@ -183,21 +265,16 @@ public class GeolocPlugin implements IPlugin {
 				}
 			}
 
-			String provider = null;
+			boolean hasProvider = startRequests();
 
-			if (_mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-				provider = LocationManager.GPS_PROVIDER;
-			} else if (_mgr.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-				provider = LocationManager.NETWORK_PROVIDER;
-			}
-
-			if (provider != null) {
-				_mgr.requestLocationUpdates(provider, 0, 0, _listener);
-			} else {
+			if (_location != null) {
+				logger.log("{geoloc} Reporting previous location");
+				EventQueue.pushEvent(new GeolocEvent(_location.getLongitude(), _location.getLatitude(), _location.getAccuracy()));
+			} else if (!hasProvider) {
 				EventQueue.pushEvent(new GeolocEvent());
-			}
+			} // Otherwise we wait
 		} catch (Exception e) {
-			logger.log(e);
+			logger.log("{geoloc} Exception:", e);
 			e.printStackTrace();
 			EventQueue.pushEvent(new GeolocEvent());
 		}
