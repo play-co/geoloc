@@ -18,7 +18,7 @@
 	}
 	
 	self.locationMgr = [[[CLLocationManager alloc] init] autorelease];
-	self.locationMgr.desiredAccuracy = kCLLocationAccuracyBest;
+	self.locationMgr.desiredAccuracy = kCLLocationAccuracyKilometer;
 	self.locationMgr.distanceFilter = kCLDistanceFilterNone;
 	self.locationMgr.delegate = self;
 	self.lastLocation = nil;
@@ -96,11 +96,16 @@
 	@try {
 		NSLOG(@"{geoloc} Got request");
 
+		NSNumber *highAcc = (NSNumber *)[response objectForKey:@"enableHighAccuracy"];
+		self.highAccuracy = (highAcc && [highAcc boolValue] == YES);
+
+		self.locationMgr.desiredAccuracy = self.highAccuracy ? kCLLocationAccuracyBest : kCLLocationAccuracyKilometer;
+
 		CLAuthorizationStatus authStatus = [CLLocationManager authorizationStatus];
 
 		// If user has or may authorize use of GPS,
 		if (authStatus == kCLAuthorizationStatusNotDetermined ||
-				authStatus == kCLAuthorizationStatusAuthorized) {
+			authStatus == kCLAuthorizationStatusAuthorized) {
 			[self getNewLocation];
 
 			// Additionally if the user is getting a prompt for this,

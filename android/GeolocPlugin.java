@@ -54,6 +54,7 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 		}
 	}
 
+	private boolean _high_accuracy;	// High accuracy mode enabled?
 	private Context _ctx;			// App context
 	private LocationManager _mgr;	// Location manager instance
 	private boolean _gps_ask;		// Has asked user to enable GPS in settings?
@@ -170,17 +171,16 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 
 	// Returns true if requests are started
 	public boolean startRequests() {
-		// If GPS provider is enabled,
-		if (!_gps_requested && _mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-			logger.log("{geoloc} Requesting location from GPS provider");
-			_mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-			_gps_requested = true;
-		}
-
 		if (!_net_requested && _mgr.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 			logger.log("{geoloc} Requesting location from network provider");
 			_mgr.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
 			_net_requested = true;
+		}
+
+		if (!_gps_requested && _mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+			logger.log("{geoloc} Requesting location from GPS provider");
+			_mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+			_gps_requested = true;
 		}
 
 		return _gps_requested || _net_requested;
@@ -254,14 +254,19 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 
 	public void onRequest(String jsonData) {
 		try {
-			// If GPS is disabled, then bug the user once with a modal
-			if (!_mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-				if (!_gps_ask) {
-					logger.log("{geoloc} Presenting GPS disabled alert to user");
+            JSONObject obj = new JSONObject(jsonData);
+            _high_accuracy = obj.getBoolean("enableHighAccuracy");
 
-					showGPSDisabledAlertToUser();
+			if (_high_accuracy) {
+				// If GPS is disabled, then bug the user once with a modal
+				if (!_mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+					if (!_gps_ask) {
+						logger.log("{geoloc} Presenting GPS disabled alert to user");
 
-					_gps_ask = true;
+						showGPSDisabledAlertToUser();
+
+						_gps_ask = true;
+					}
 				}
 			}
 

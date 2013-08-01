@@ -46,9 +46,9 @@ if (!navigator.geolocation || !navigator.geolocation.getCurrentPosition) {
 	// So add it:
 
 	GLOBAL.navigator.geolocation = {
-		getCurrentPosition: function(cbSuccess, cbFail) {
+		getCurrentPosition: function(cbSuccess, cbFail, opts) {
 			// Post a new request
-			NATIVE.plugins.sendEvent("GeolocPlugin", "onRequest", "{}");
+			NATIVE.plugins.sendEvent("GeolocPlugin", "onRequest", typeof opts === "object" ? JSON.stringify(opts) : "{}");
 
 			// Insert callbacks into waiting lists
 			if (typeof(cbSuccess) == "function") {
