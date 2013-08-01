@@ -228,7 +228,7 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 		TeaLeaf.get().runOnUiThread(new Runnable() {
 			public void run() {
 				AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(TeaLeaf.get());
-				alertDialogBuilder.setMessage("GPS is disabled in your device. Would you like to enable it?")
+				alertDialogBuilder.setMessage("This application is requesting Location Services. Would you like to allow this?")
 								  .setCancelable(false)
 								  .setPositiveButton("Goto Settings Page To Enable GPS",
 									new DialogInterface.OnClickListener() {
@@ -255,18 +255,19 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 	public void onRequest(String jsonData) {
 		try {
             JSONObject obj = new JSONObject(jsonData);
-            _high_accuracy = obj.getBoolean("enableHighAccuracy");
+			if (obj.has("enableHighAccuracy")) {
+            	_high_accuracy = obj.getBoolean("enableHighAccuracy");
+			}
 
-			if (_high_accuracy) {
+			if ((_high_accuracy && !_mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) ||
+				!_mgr.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 				// If GPS is disabled, then bug the user once with a modal
-				if (!_mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-					if (!_gps_ask) {
-						logger.log("{geoloc} Presenting GPS disabled alert to user");
+				if (!_gps_ask) {
+					logger.log("{geoloc} Presenting GPS disabled alert to user");
 
-						showGPSDisabledAlertToUser();
+					showGPSDisabledAlertToUser();
 
-						_gps_ask = true;
-					}
+					_gps_ask = true;
 				}
 			}
 

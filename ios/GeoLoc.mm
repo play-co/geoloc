@@ -97,7 +97,9 @@
 		NSLOG(@"{geoloc} Got request");
 
 		NSNumber *highAcc = (NSNumber *)[response objectForKey:@"enableHighAccuracy"];
-		self.highAccuracy = (highAcc && [highAcc boolValue] == YES);
+		if (highAcc) {
+			self.highAccuracy = ([highAcc boolValue] == YES);
+		}
 
 		self.locationMgr.desiredAccuracy = self.highAccuracy ? kCLLocationAccuracyBest : kCLLocationAccuracyKilometer;
 
