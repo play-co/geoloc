@@ -94,14 +94,14 @@
 
 - (void) onRequest:(NSDictionary *)jsonObject {
 	@try {
-		NSLOG(@"{geoloc} Got request");
-
 		NSNumber *highAcc = (NSNumber *)[jsonObject objectForKey:@"enableHighAccuracy"];
 		if (highAcc) {
 			self.highAccuracy = ([highAcc boolValue] == YES);
 		}
 
 		self.locationMgr.desiredAccuracy = self.highAccuracy ? kCLLocationAccuracyBest : kCLLocationAccuracyKilometer;
+
+		NSLOG(@"{geoloc} Requesting location update with highAccuracy=%d", (int)self.highAccuracy);
 
 		CLAuthorizationStatus authStatus = [CLLocationManager authorizationStatus];
 
