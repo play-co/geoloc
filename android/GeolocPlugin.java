@@ -54,6 +54,7 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 		}
 	}
 
+	private boolean _high_accuracy;	// High accuracy mode enabled?
 	private Context _ctx;			// App context
 	private LocationManager _mgr;	// Location manager instance
 	private boolean _gps_ask;		// Has asked user to enable GPS in settings?
@@ -170,17 +171,22 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 
 	// Returns true if requests are started
 	public boolean startRequests() {
-		// If GPS provider is enabled,
-		if (!_gps_requested && _mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-			logger.log("{geoloc} Requesting location from GPS provider");
-			_mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-			_gps_requested = true;
-		}
-
+		// If network provider is available,
 		if (!_net_requested && _mgr.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+			// Request network provider position udpate
 			logger.log("{geoloc} Requesting location from network provider");
 			_mgr.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
 			_net_requested = true;
+		}
+
+		// If high accuracy is required, or network provider is disabled,
+		if (_high_accuracy || !_mgr.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+			// Request GPS position update
+			if (!_gps_requested && _mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+				logger.log("{geoloc} Requesting location from GPS provider");
+				_mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+				_gps_requested = true;
+			}
 		}
 
 		return _gps_requested || _net_requested;
@@ -228,7 +234,7 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 		TeaLeaf.get().runOnUiThread(new Runnable() {
 			public void run() {
 				AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(TeaLeaf.get());
-				alertDialogBuilder.setMessage("GPS is disabled in your device. Would you like to enable it?")
+				alertDialogBuilder.setMessage("This application is requesting Location Services. Would you like to allow this?")
 								  .setCancelable(false)
 								  .setPositiveButton("Goto Settings Page To Enable GPS",
 									new DialogInterface.OnClickListener() {
@@ -254,14 +260,23 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 
 	public void onRequest(String jsonData) {
 		try {
-			// If GPS is disabled, then bug the user once with a modal
+            JSONObject obj = new JSONObject(jsonData);
+			if (obj.has("enableHighAccuracy")) {
+            	_high_accuracy = obj.getBoolean("enableHighAccuracy");
+			}
+
+			// If no GPS provider,
 			if (!_mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-				if (!_gps_ask) {
-					logger.log("{geoloc} Presenting GPS disabled alert to user");
+				// If high accuracy requested or no providers enabled,
+				if (_high_accuracy || !_mgr.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+					// If not bugged user yet,
+					if (!_gps_ask) {
+						logger.log("{geoloc} Presenting GPS disabled alert to user");
 
-					showGPSDisabledAlertToUser();
+						showGPSDisabledAlertToUser();
 
-					_gps_ask = true;
+						_gps_ask = true;
+					}
 				}
 			}
 

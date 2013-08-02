@@ -25,11 +25,14 @@ navigator.geolocation.getCurrentPosition(bind(this, function(pos) {
 	var acc = pos.coords.accuracy;
 }), bind(this, function(err) {
 	logger.log("FAIL:", err.code);
-}));
+}), {
+	'enableHighAccuracy': true
+});
 ~~~
 
 This gives you lat, long and accuracy.  Accuracy is in meters.
 
+To enable higher-accuracy location like GPS, be sure to pass 'enableHighAccuracy': true as an option.
 
 ## Platform-specific notes
 
