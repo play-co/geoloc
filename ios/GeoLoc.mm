@@ -96,7 +96,7 @@
 	@try {
 		NSLOG(@"{geoloc} Got request");
 
-		NSNumber *highAcc = (NSNumber *)[response objectForKey:@"enableHighAccuracy"];
+		NSNumber *highAcc = (NSNumber *)[jsonObject objectForKey:@"enableHighAccuracy"];
 		if (highAcc) {
 			self.highAccuracy = ([highAcc boolValue] == YES);
 		}
