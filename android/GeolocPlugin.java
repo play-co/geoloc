@@ -181,13 +181,16 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 
 	// Returns true if requests are started
 	public boolean startRequests() {
+		final LocationManager mgr = _mgr;
+		final GeolocPlugin thiz = this;
+
 		// If network provider is available,
 		if (!_net_requested && _mgr.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 			// Request network provider position udpate
 			logger.log("{geoloc} Requesting location from network provider");
 			_activity.runOnUiThread(new Runnable() {
 				public void run() {
-					_mgr.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+					mgr.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, thiz);
 				}
 			});
 			_net_requested = true;
@@ -200,7 +203,7 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 				logger.log("{geoloc} Requesting location from GPS provider");
 				_activity.runOnUiThread(new Runnable() {
 					public void run() {
-						_mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+						mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, thiz);
 					}
 				});
 				_gps_requested = true;
@@ -211,11 +214,14 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 	}
 
 	public void stopRequests() {
+		final LocationManager mgr = _mgr;
+		final GeolocPlugin thiz = this;
+
 		if (_gps_requested || _net_requested) {
 			logger.log("{geoloc} Removing location requests on pause");
 			_activity.runOnUiThread(new Runnable() {
 				public void run() {
-					_mgr.removeUpdates(this);
+					mgr.removeUpdates(thiz);
 				}
 			});
 			_gps_requested = false;
