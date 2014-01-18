@@ -14,7 +14,6 @@ import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import java.util.HashMap;
 import java.util.List;
-import java.lang.System.nanoTime;
 
 import android.location.Location;
 import android.location.LocationListener;
@@ -55,6 +54,7 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 	}
 
 	private boolean _high_accuracy;	// High accuracy mode enabled?
+	private Activity _activity;		// Activity
 	private Context _ctx;			// App context
 	private LocationManager _mgr;	// Location manager instance
 	private boolean _gps_ask;		// Has asked user to enable GPS in settings?
@@ -78,7 +78,7 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 			}
 
 			// If it is time to stop requests,
-			if (nanoTime() - _last_request < 30 * 1000000000) {
+			if (System.currentTimeMillis() - _last_request < 30 * 1000) { // 30 seconds
 				logger.log("{geoloc} Ending requests since the user has not requested any position data for a while");
 				stopRequests();
 				_gps_wanted = false;
@@ -133,6 +133,7 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 
 	public void onCreate(Activity activity, Bundle savedInstanceState) {
 		_mgr = (LocationManager)_ctx.getSystemService(Context.LOCATION_SERVICE);
+		_activity = activity;
 
 		// Listen for GPS events
 		_mgr.addGpsStatusListener(this);
@@ -175,7 +176,7 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 		}
 
 		// Start requests immediately so that the location subsystem will warm up faster
-		startRequests();
+		//startRequests();
 	}
 
 	// Returns true if requests are started
@@ -184,7 +185,11 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 		if (!_net_requested && _mgr.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 			// Request network provider position udpate
 			logger.log("{geoloc} Requesting location from network provider");
-			_mgr.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+			_activity.runOnUiThread(new Runnable() {
+				public void run() {
+					_mgr.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+				}
+			});
 			_net_requested = true;
 		}
 
@@ -193,7 +198,11 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 			// Request GPS position update
 			if (!_gps_requested && _mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 				logger.log("{geoloc} Requesting location from GPS provider");
-				_mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+				_activity.runOnUiThread(new Runnable() {
+					public void run() {
+						_mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+					}
+				});
 				_gps_requested = true;
 			}
 		}
@@ -204,7 +213,11 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 	public void stopRequests() {
 		if (_gps_requested || _net_requested) {
 			logger.log("{geoloc} Removing location requests on pause");
-			_mgr.removeUpdates(this);
+			_activity.runOnUiThread(new Runnable() {
+				public void run() {
+					_mgr.removeUpdates(this);
+				}
+			});
 			_gps_requested = false;
 			_net_requested = false;
 		}
@@ -278,7 +291,7 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 				startRequests();
 			}
 
-			_last_request = nanoTime();
+			_last_request = System.currentTimeMillis();
 
             JSONObject obj = new JSONObject(jsonData);
 			if (obj.has("enableHighAccuracy")) {
