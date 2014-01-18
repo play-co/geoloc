@@ -78,7 +78,9 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 			}
 
 			// If it is time to stop requests,
-			if (System.currentTimeMillis() - _last_request < 30 * 1000) { // 30 seconds
+			if (!_gps_wanted ||
+				System.currentTimeMillis() - _last_request > 30 * 1000) // 30 sec
+			{
 				logger.log("{geoloc} Ending requests since the user has not requested any position data for a while");
 				stopRequests();
 				_gps_wanted = false;
