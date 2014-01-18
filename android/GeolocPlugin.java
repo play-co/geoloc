@@ -14,6 +14,7 @@ import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import java.util.HashMap;
 import java.util.List;
+import java.lang.System.nanoTime;
 
 import android.location.Location;
 import android.location.LocationListener;
@@ -60,6 +61,8 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 	private Location _location;		// Last location
 	private boolean _gps_requested;	// Waiting for location updates from GPS?
 	private boolean _net_requested;	// Waiting for location updates from network?
+	private boolean _gps_wanted;	// Is GPS data requested?
+	private long _last_request;		// Last GPS request
 
 	@Override
 		public void onLocationChanged(Location loc) {
@@ -72,6 +75,13 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 				EventQueue.pushEvent(new GeolocEvent(loc.getLongitude(), loc.getLatitude(), loc.getAccuracy()));
 			} else {
 				EventQueue.pushEvent(new GeolocEvent());
+			}
+
+			// If it is time to stop requests,
+			if (nanoTime() - _last_request < 30 * 1000000000) {
+				logger.log("{geoloc} Ending requests since the user has not requested any position data for a while");
+				stopRequests();
+				_gps_wanted = false;
 			}
 		}
 
@@ -201,11 +211,15 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 	}
 
 	public void onResume() {
-		startRequests();
+		if (_gps_wanted) {
+			startRequests();
+		}
 	}
 
 	public void onStart() {
-		startRequests();
+		if (_gps_wanted) {
+			startRequests();
+		}
 	}
 
 	public void onPause() {
@@ -259,6 +273,13 @@ public class GeolocPlugin implements IPlugin, LocationListener, GpsStatus.Listen
 
 	public void onRequest(String jsonData) {
 		try {
+			if (!_gps_wanted) {
+				_gps_wanted = true;
+				startRequests();
+			}
+
+			_last_request = nanoTime();
+
             JSONObject obj = new JSONObject(jsonData);
 			if (obj.has("enableHighAccuracy")) {
             	_high_accuracy = obj.getBoolean("enableHighAccuracy");
