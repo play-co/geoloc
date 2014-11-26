@@ -1,32 +1,47 @@
-# Game Closure Devkit Plugin: Geolocation
+# Game Closure Devkit Plugin : Geolocation
+
+## Demo
+Check out [the demo application](https://github.com/gameclosure/demoGeolocation)
+or open the demo [in the browser](http://storage.googleapis.com/devkit-modules/geolocation/index.html)
+
+
+## Installation
+Install the module using using the standard devkit install process:
+
+~~~
+devkit install https://github.com/gameclosure/geoloc#v2.0.0
+~~~
+
 
 ## Usage
-
-Include it in the `manifest.json` file under the "addons" section for your game:
-
-~~~
-"addons": [
-	"geoloc"
-],
-~~~
+The geolocation module works differently than most modules - importing it
+adds the geolocation function to the `navigator` object for any
+platform that does not have it (mobile devices). All you need to do is import
+the module, then access `navigator.geolocation` as if you were in
+a browser.
 
 At the top of your game's `src/Application.js`:
-
 ~~~
-import plugins.geoloc.install;
+import geoloc;
 ~~~
 
 Now you can use the normal HTML5 `navigator.geolocation.getCurrentPosition` API:
 
 ~~~
 navigator.geolocation.getCurrentPosition(bind(this, function(pos) {
-	var lat = pos.coords.latitude;
-	var lng = pos.coords.longitude;
-	var acc = pos.coords.accuracy;
+    var lat = pos.coords.latitude;
+    var lng = pos.coords.longitude;
+    var acc = pos.coords.accuracy;
+
+    logger.log("geolocation",
+            "lat", lat,
+            "lng", lng,
+            "acc", acc
+        );
 }), bind(this, function(err) {
-	logger.log("FAIL:", err.code);
+    logger.log("FAIL:", err.code);
 }), {
-	'enableHighAccuracy': true
+    'enableHighAccuracy': true
 });
 ~~~
 
